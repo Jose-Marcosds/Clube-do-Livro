@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+meubanco.db
+*.pyc
+__pycache__/
+.vscode/
