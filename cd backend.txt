@@ -1,6 +1,10 @@
 cd backend
-uvicorn main:app --reload
 python -m uvicorn main:app --reload
+
+(uvicorn main:app --reload)
+
+(uvicorn main:app --reload
+python -m uvicorn main:app --reload)
 
 
 cd frontend
@@ -10,3 +14,16 @@ http://localhost:5173
 
 
 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+
+
+@app.get("/api/livros")
+def listar_livros():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    livros = cursor.execute("SELECT * FROM livros ORDER BY id DESC").fetchall()
+    conn.close()
+    return [dict(livro) for livro in livros]
+
+
+https://www.loom.com/share/4c8b8544b5614eb7917636b011832ffd
