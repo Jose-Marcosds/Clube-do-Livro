@@ -7,7 +7,7 @@ export function AC1() {
   const [livros, setLivros] = useState([]);
   const [titulo, setTitulo] = useState('');
   const [autor, setAutor] = useState('');
-  const [categoria, setCategoria] = useState('');
+  const [genero, setGenero] = useState('');
   const [capaUrl, setCapaUrl] = useState('');
   const [buscandoCapa, setBuscandoCapa] = useState(false);
 
@@ -30,88 +30,6 @@ export function AC1() {
     }
   };
 
-  // Função recursiva para extrair Autor, Categoria e URL de Capa de qualquer JSON
-  const extrairDadosDoLivro = (dados) => {
-    let capa = '';
-    let autorExtraido = '';
-    let categoriaExtraida = '';
-
-    const varrer = (obj) => {
-      if (!obj || typeof obj !== 'object') return;
-
-      for (const [key, value] of Object.entries(obj)) {
-        const chaveLower = key.toLowerCase();
-
-        // 1. Extração da Capa
-        if (!capa) {
-          if (
-            typeof value === 'string' &&
-            (value.startsWith('http://') || value.startsWith('https://')) &&
-            (
-              value.includes('jpg') ||
-              value.includes('jpeg') ||
-              value.includes('png') ||
-              value.includes('covers') ||
-              value.includes('books')
-            )
-          ) {
-            capa = value;
-          } else if (
-            ['capa', 'capa_url', 'cover', 'thumbnail', 'imagelinks', 'imagem'].includes(chaveLower) &&
-            value
-          ) {
-            if (typeof value === 'string') {
-              capa = value;
-            } else if (typeof value === 'object') {
-              varrer(value);
-            }
-          }
-        }
-
-        // 2. Extração do Autor
-        if (!autorExtraido) {
-          if (
-            ['autor', 'autores', 'author', 'authors', 'author_name'].includes(chaveLower) &&
-            value
-          ) {
-            if (Array.isArray(value)) {
-              autorExtraido = value.join(', ');
-            } else if (typeof value === 'string') {
-              autorExtraido = value;
-            }
-          }
-        }
-
-        // 3. Extração da Categoria
-        if (!categoriaExtraida) {
-          if (
-            ['categoria', 'categorias', 'genero', 'genre', 'categories', 'subjects', 'subject'].includes(chaveLower) &&
-            value
-          ) {
-            if (Array.isArray(value)) {
-              categoriaExtraida = value[0];
-            } else if (typeof value === 'string') {
-              categoriaExtraida = value;
-            }
-          }
-        }
-
-        // Continua procurando dentro de objetos e arrays
-        if (typeof value === 'object' && value !== null) {
-          varrer(value);
-        }
-      }
-    };
-
-    varrer(dados);
-
-    return {
-      capa,
-      autorExtraido,
-      categoriaExtraida
-    };
-  };
-
   const handleBuscarCapa = async (e) => {
     if (e) e.preventDefault();
 
@@ -129,43 +47,22 @@ export function AC1() {
 
       if (res.ok) {
         const data = await res.json();
-
         console.log('Resposta do Backend:', data);
 
-        const {
-          capa,
-          autorExtraido,
-          categoriaExtraida
-        } = extrairDadosDoLivro(data);
+        // Preenche os campos diretamente com os dados estruturados do backend
+        if (data.capa_url) setCapaUrl(data.capa_url);
+        if (data.autor) setAutor(data.autor);
+        if (data.categoria || data.genero) setGenero(data.categoria || data.genero);
 
-        if (capa) {
-          setCapaUrl(capa);
-        }
-
-        if (autorExtraido) {
-          setAutor(autorExtraido);
-        }
-
-        if (categoriaExtraida) {
-          setCategoria(categoriaExtraida);
-        }
-
-        if (!capa && !autorExtraido && !categoriaExtraida) {
-          alert(
-            'Backend respondeu, mas nenhum dado do livro pôde ser extraído automaticamente.'
-          );
+        if (!data.capa_url && !data.autor && !data.categoria && !data.genero) {
+          alert('Livro encontrado, mas alguns detalhes não estavam disponíveis.');
         }
       } else {
-        alert(
-          `Erro na busca. Servidor respondeu com código: ${res.status}`
-        );
+        alert(`Erro na busca. Servidor respondeu com código: ${res.status}`);
       }
     } catch (err) {
       console.error('Erro ao buscar dados:', err);
-
-      alert(
-        'Não foi possível conectar ao backend FastAPI para buscar os dados.'
-      );
+      alert('Não foi possível conectar ao backend FastAPI para buscar os dados.');
     } finally {
       setBuscandoCapa(false);
     }
@@ -182,7 +79,7 @@ export function AC1() {
     const novoLivro = {
       titulo: titulo.trim(),
       autor: autor.trim(),
-      categoria: categoria.trim() || 'Geral',
+      categoria: genero.trim() || 'Geral', // Mantém o envio da chave 'categoria' para o banco SQLite
       capa_url: capaUrl.trim() || ''
     };
 
@@ -200,7 +97,7 @@ export function AC1() {
 
         setTitulo('');
         setAutor('');
-        setCategoria('');
+        setGenero('');
         setCapaUrl('');
 
         carregarLivros();
@@ -209,7 +106,6 @@ export function AC1() {
       }
     } catch (error) {
       console.error('Erro de conexão:', error);
-
       alert('Não foi possível conectar ao servidor backend.');
     }
   };
@@ -262,21 +158,11 @@ export function AC1() {
           <h3>Cadastrar Novo Livro</h3>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '0.3rem'
-              }}
-            >
+            <label style={{ display: 'block', marginBottom: '0.3rem' }}>
               <strong>Título:</strong>
             </label>
 
-            <div
-              style={{
-                display: 'flex',
-                gap: '0.5rem'
-              }}
-            >
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
                 type="text"
                 value={titulo}
@@ -310,12 +196,7 @@ export function AC1() {
           </div>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '0.3rem'
-              }}
-            >
+            <label style={{ display: 'block', marginBottom: '0.3rem' }}>
               <strong>Autor:</strong>
             </label>
 
@@ -334,19 +215,14 @@ export function AC1() {
           </div>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '0.3rem'
-              }}
-            >
-              <strong>Categoria:</strong>
+            <label style={{ display: 'block', marginBottom: '0.3rem' }}>
+              <strong>Gênero:</strong>
             </label>
 
             <input
               type="text"
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
+              value={genero}
+              onChange={(e) => setGenero(e.target.value)}
               placeholder="Ex: Ficção, Romance, Terror"
               style={{
                 width: '100%',
@@ -358,12 +234,7 @@ export function AC1() {
           </div>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '0.3rem'
-              }}
-            >
+            <label style={{ display: 'block', marginBottom: '0.3rem' }}>
               <strong>URL da Capa (Opcional):</strong>
             </label>
 
@@ -397,18 +268,11 @@ export function AC1() {
           </button>
         </form>
 
-        <div
-          style={{
-            width: '180px',
-            textAlign: 'center'
-          }}
-        >
+        <div style={{ width: '180px', textAlign: 'center' }}>
           <h4>Prévia da Capa</h4>
 
           {buscandoCapa ? (
-            <p style={{ color: '#666' }}>
-              A buscar capa...
-            </p>
+            <p style={{ color: '#666' }}>A buscar capa...</p>
           ) : capaUrl ? (
             <img
               src={capaUrl}
@@ -516,7 +380,7 @@ export function AC1() {
                 {livro.autor}
               </p>
 
-              {livro.categoria && (
+              {(livro.categoria || livro.genero) && (
                 <span
                   style={{
                     fontSize: '0.75rem',
@@ -527,7 +391,7 @@ export function AC1() {
                     display: 'inline-block'
                   }}
                 >
-                  {livro.categoria}
+                  {livro.categoria || livro.genero}
                 </span>
               )}
             </div>

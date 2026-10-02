@@ -31,25 +31,32 @@ export function AC2() {
       console.error('Erro ao carregar livros:', error);
     }
   };
+const atualizarLivro = async (id, novosDados) => {
+    const livroAtual = livros.find(l => (l.id || l._id) === id);
+    if (!livroAtual) return;
 
-  const atualizarLivro = async (id, novosDados) => {
+    const payloadCompleto = {
+      ...livroAtual,
+      ...novosDados
+    };
+
     const livrosAtualizados = livros.map(livro => {
       if ((livro.id || livro._id) === id) {
-        return { ...livro, ...novosDados };
+        return payloadCompleto;
       }
       return livro;
     });
     setLivros(livrosAtualizados);
 
     if (livroSelecionado && (livroSelecionado.id || livroSelecionado._id) === id) {
-      setLivroSelecionado(prev => ({ ...prev, ...novosDados }));
+      setLivroSelecionado(payloadCompleto);
     }
 
     try {
-      await fetch(`${API_URL}/livros/${id}`, {
+      await fetch(`\({API_URL}/livros/\){id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(novosDados)
+        body: JSON.stringify(payloadCompleto)
       });
     } catch (err) {
       console.error('Erro ao atualizar no servidor:', err);
