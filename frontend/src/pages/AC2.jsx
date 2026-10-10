@@ -31,7 +31,8 @@ export function AC2() {
       console.error('Erro ao carregar livros:', error);
     }
   };
-const atualizarLivro = async (id, novosDados) => {
+
+  const atualizarLivro = async (id, novosDados) => {
     const livroAtual = livros.find(l => (l.id || l._id) === id);
     if (!livroAtual) return;
 
@@ -40,6 +41,7 @@ const atualizarLivro = async (id, novosDados) => {
       ...novosDados
     };
 
+    // Atualiza o estado local imediatamente
     const livrosAtualizados = livros.map(livro => {
       if ((livro.id || livro._id) === id) {
         return payloadCompleto;
@@ -52,12 +54,16 @@ const atualizarLivro = async (id, novosDados) => {
       setLivroSelecionado(payloadCompleto);
     }
 
+    // Envia a requisição para o servidor
     try {
-      await fetch(`\({API_URL}/livros/\){id}`, {
+      const resp = await fetch(`${API_URL}/livros/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payloadCompleto)
       });
+      if (!resp.ok) {
+        console.error('Erro na resposta do servidor:', await resp.text());
+      }
     } catch (err) {
       console.error('Erro ao atualizar no servidor:', err);
     }
@@ -74,7 +80,13 @@ const atualizarLivro = async (id, novosDados) => {
     return '';
   };
 
-  const livrosFiltrados = livros.filter(l => l.categoriaLeitura === abaAtiva);
+  // Lógica da Opção 1: "Tenho" exibe todos os livros; as demais abas filtram pelo status correspondente
+  const livrosFiltrados = livros.filter(l => {
+    if (abaAtiva === 'tenho') {
+      return true; 
+    }
+    return l.categoriaLeitura === abaAtiva;
+  });
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1100px', margin: '0 auto' }}>
@@ -118,7 +130,7 @@ const atualizarLivro = async (id, novosDados) => {
               fontSize: '1rem'
             }}
           >
-            {cat.rotulo} ({livros.filter(l => l.categoriaLeitura === cat.id).length})
+            {cat.rotulo} ({cat.id === 'tenho' ? livros.length : livros.filter(l => l.categoriaLeitura === cat.id).length})
           </button>
         ))}
       </div>

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
-from routers import ac1
+from routers import ac1, ac2
 
 app = FastAPI(title="Backend Clube do Livro")
 
@@ -36,9 +36,10 @@ def init_db():
 
 init_db()
 
-# Inclui o módulo isolado da AC1
+# Inclui os módulos isolados das ACs
 app.include_router(ac1.router)
+app.include_router(ac2.router)
 
 @app.get("/")
 def home():
-    return {"status": "Servidor rodando e rotas da AC1 ativas!"}
+    return {"status": "Servidor rodando e rotas da AC1 e AC2 ativas!"}
